@@ -10,9 +10,6 @@
 #include <unordered_set>
 #include <vector>
 
-//hold inliers and outliers which by created this function
-std::vector<cv::Point> totalPoints;
-
 double Slope(int x0, int y0, int x1, int y1)
 {
 	return (y1 - y0) / (x1 - x0);
@@ -35,6 +32,9 @@ void createLine(cv::Mat& img, cv::Point p1, cv::Point p2, cv::Scalar color, int 
 
 std::vector<cv::Point> createData(int inlierNum,int outlierNum,int imageSize) //for creating useful data for my RANSAC implementation
 {
+	
+	//hold inliers and outliers which by created this function
+	std::vector<cv::Point> totalPoints;
 	
 	//create inlier data for testing purpose
 	std::random_device Seed_Device;
@@ -71,6 +71,7 @@ std::vector<cv::Point> createData(int inlierNum,int outlierNum,int imageSize) //
 std::unordered_set<int> executeRANSAC(std::vector<cv::Point> data, float distanceTolerance, int maxIteration)
 {
 	std::unordered_set<int> bestInliers;
+	if (data.size() < 2) return bestInliers;
 	for (int i = 0; i < maxIteration; i++)
 	{
 		std::unordered_set<int> inliers;
@@ -78,30 +79,30 @@ std::unordered_set<int> executeRANSAC(std::vector<cv::Point> data, float distanc
 		//for line we need 2 points, select points randomly
 		while (inliers.size() < 2)
 		{
-			inliers.insert(rand() % (totalPoints.size()));
+			inliers.insert(rand() % (data.size()));
 		}
 		
 		float x1, y1, x2, y2;
 
 		auto iterator = inliers.begin();
-		x1 = totalPoints[*iterator].x;
-		y1 = totalPoints[*iterator].y;
+		x1 = data[*iterator].x;
+		y1 = data[*iterator].y;
 
 		iterator++;
 
-		x2 = totalPoints[*iterator].x;
-		y2 = totalPoints[*iterator].y;
+		x2 = data[*iterator].x;
+		y2 = data[*iterator].y;
 
 		float a = (y1 - y2);
 		float b = (x2 - x1);
 		float c = (x1 * y2) - (x2 * y1);
 
-		for (int index = 0; index < totalPoints.size();index++)
+		for (int index = 0; index < data.size();index++)
 		{
 			if (inliers.count(index) > 0)
 				continue;
 
-			cv::Point point = totalPoints[index];
+			cv::Point point = data[index];
 			float x3 = point.x;
 			float y3 = point.y;
 			float distance = fabs(a*x3 + b * y3 + c) / sqrt(a*a + b*b);
